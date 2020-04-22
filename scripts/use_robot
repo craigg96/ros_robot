@@ -1,0 +1,2 @@
+cd ~/ros/robot
+source devel/setup.bash
