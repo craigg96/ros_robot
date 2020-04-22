@@ -22,8 +22,7 @@ echo "Installing Manual Dependancies"
 cd ~/ros/robot/src
 
 
-sudo apt install ros-melodic-robot-upstart -y 
-ros-melodic-serial -y 
+sudo apt install ros-melodic-robot-upstart -y ros-melodic-serial -y 
 sudo apt autoremove -y 
 
 cd ..
@@ -35,11 +34,32 @@ source devel/setup.bash
 
 echo "Adding aliases to bashrc"
 
-ALIASES
+cat <<EOT >> ~/.bashrc
+source /home/craig/ros/robot/devel/setup.bash
+
+alias use_localhost='source ~/ros/robot/src/robot/scripts/localhost_ip'
+
+alias use_robot_ip='source ~/ros/robot/src/robot/scripts/robot_ip'
+
+alias use_robot='source ~/ros/robot/src/robot/scripts/use_robot'
+
+alias make_robot='source ~/ros/robot/src/robot/scripts/make_robot'
+
+alias rosdep_robot='source ~/ros/robot/src/robot/scripts/rosdep_robot'
+
+alias robot_src='use_robot; cd ~/ros/robot/src/robot'
+
+connect_to() {
+    export ROS_HOSTNAME=`hostname`
+    export ROS_MASTER_URI=http://"$1":11311
+    echo "ROS_HOSTNAME=$ROS_HOSTNAME"
+    echo "ROS_MASTER_URI=$ROS_MASTER_URI"
+}
+EOT
 
 source ~/.bashrc
 
-cd ~/ros/robot/src/ziva
-rosrun robot_upstart install robot_bringup/launch/core.launch
-sudo systemctl daemon-reload && sudo systemctl start robot
 
+# cd ~/ros/robot/src/robot
+# rosrun robot_upstart install robot_bringup/launch/core.launch
+# sudo systemctl daemon-reload && sudo systemctl start robot

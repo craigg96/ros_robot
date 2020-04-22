@@ -3,7 +3,6 @@ Instructions how to setup a fresh install of ubuntu 18.04 on a jetson nano
 # Create folder directory 
     cd ~
     mkdir -p ros/robot/src
-    # If possible add keys to ziva_keys folder now    
 
 # Configure git and clone ziva repository
 
