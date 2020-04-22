@@ -1,0 +1,66 @@
+cd ~/ros/ziva/src
+echo "Installing ROS Melodic"
+
+sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+sudo apt update
+sudo apt install ros-melodic-desktop -y
+sudo apt-get install python-rosdep -y
+
+
+sudo rosdep init 
+rosdep update
+
+echo "source /opt/ros/melodic/setup.bash" >> ~/.bashrc 
+source ~/.bashrc
+
+sudo apt install cmake python-catkin-pkg python-empy python-nose python-setuptools libgtest-dev python-rosinstall python-rosinstall-generator python-wstool build-essential git python-pip -y
+
+
+
+echo "Installing Manual Dependancies"
+cd ~/ros/ziva/src
+pip install AWSIoTPythonSDK
+git clone https://github.com/ziva-robotics/vesc.git
+git clone https://github.com/ziva-robotics/rplidar_ros.git
+git clone https://github.com/ziva-robotics/phidgets_drivers.git
+git clone https://github.com/ziva-robotics/ublox.git
+sudo apt install ros-melodic-robot-upstart -y 
+sudo apt install ros-melodic-video-stream-opencv ros-melodic-realsense2-camera ros-melodic-rgbd-launch ros-melodic-gmappin gros-melodic-serial -y 
+sudo apt autoremove -y 
+
+cd ..
+rosdep update
+rosdep install --from-paths src --ignore-src -r -y
+
+catkin_make
+source devel/setup.bash
+
+echo "Adding aliases to bashrc"
+
+cat <<EOT >> ~/.bashrc
+source /home/cst/ros/ziva/devel/setup.bash
+# aliases for ziva
+alias use_localhost='source ~/ros/ziva/src/ziva/scripts/localhost_ip'
+alias use_ziva_ip='source ~/ros/ziva/src/ziva/scripts/ziva_ip'
+alias use_ziva='source ~/ros/ziva/src/ziva/scripts/use_ziva'
+alias make_ziva='source ~/ros/ziva/src/ziva/scripts/make_ziva'
+alias rosdep_ziva='source ~/ros/ziva/src/ziva/scripts/rosdep_ziva'
+alias ziva_src='use_ziva; cd ~/ros/ziva/src/ziva'
+alias start_ziva='use_ziva; roslaunch ziva_bringup velocity_control.launch.launch'
+alias start_ziva_logger='use_ziva; ~/ros/ziva/src/ziva/scripts/start_ziva_logger'
+alias stop_ziva_logger='~/ros/ziva/src/ziva/scripts/stop_ziva_logger'
+alias check_vescs='ls /dev/ | grep vesc'
+connect_to() {
+    export ROS_HOSTNAME=`hostname`
+    export ROS_MASTER_URI=http://"$1":11311
+    echo "ROS_HOSTNAME=$ROS_HOSTNAME"
+    echo "ROS_MASTER_URI=$ROS_MASTER_URI"
+}
+EOT
+source ~/.bashrc
+
+cd ~/ros/ziva/src/ziva
+rosrun robot_upstart install ziva_bringup/launch/core.launch
+sudo systemctl daemon-reload && sudo systemctl start ziva
+
