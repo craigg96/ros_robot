@@ -19,7 +19,9 @@ sudo apt install cmake python-catkin-pkg python-empy python-nose python-setuptoo
 
 
 echo "Installing Manual Dependancies"
+
 cd ~/ros/robot/src
+#git clone https://github.com/craigg96/ublox.git
 
 
 sudo apt install ros-melodic-robot-upstart -y ros-melodic-serial -y 
