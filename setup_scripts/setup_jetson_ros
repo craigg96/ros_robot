@@ -12,7 +12,7 @@ sudo rosdep init
 rosdep update
 
 echo "source /opt/ros/melodic/setup.bash" >> ~/.bashrc 
-source ~/.bashrc
+source ~/.bgashrc
 
 sudo apt install cmake python-catkin-pkg python-empy python-nose python-setuptools libgtest-dev python-rosinstall python-rosinstall-generator python-wstool build-essential git python-pip -y
 
