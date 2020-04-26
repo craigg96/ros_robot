@@ -1,0 +1,12 @@
+<launch>
+    <node pkg="rosserial_python" type="serial_node.py" name="rosserial_python_node">
+        <param name="mode" value="serial" />
+        <param name="port" value="/dev/arduino" />
+    </node>
+
+    <!-- <node name="imu_pitch" pkg="bringup" type="imu.py"/>
+    <node name="imu_roll" pkg="bringup" type="imu.py"/>
+    <node name="imu_yaw" pkg="bringup" type="imu.py"/>
+    <node name="imu_temp" pkg="bringup" type="imu.py"/> -->
+
+</launch>

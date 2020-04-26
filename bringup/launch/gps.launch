@@ -3,10 +3,9 @@
         <param name="port" value="/dev/gps"/>
         <param name="baud" value="9600" />
         <param name="frame_id" value="gps" />
-        <param name="use_GNSS_time" value="True" />
+        <param name="use_GNSS_time" value="False" />
         <param name="time_ref_source" value="gps" />
-        <param name="useRMC" value="False" />
+        <param name="useRMC" value="True" />
     </node>
 </launch>
 
-<!-- roslaunch ublox_gps ublox_zed-f9p.launch -->

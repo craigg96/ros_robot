@@ -1,7 +1,7 @@
 sudo apt-get install ros-melodic-rosserial-arduino -y
 sudo apt-get install ros-melodic-rosserial -y
 
-sudo apt-get install arduino-mk
+sudo apt-get install arduino-mk -y
 rosrun rosserial_arduino make_libraries.py /home/craig/ros/robot/src/libraries
 sudo mv /home/craig/ros/robot/src/libraries/ros_lib /home/craig/ros/robot/src/libraries/ros
 cd /usr/share/arduino/libraries
