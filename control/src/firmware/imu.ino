@@ -241,30 +241,43 @@ float eInt[3] = {0.0f, 0.0f, 0.0f};       // vector to hold integral error for M
 float magBias[3],magScale[3];
 float ypr_offset[3] = {0,0,0};
 
-
-
-
-
-
-
-
-
+// float acc[3] = {0.0,0.0,0.0};
+// float gyr[3] = {0.0,0.0,0.0};
+// float mgx[3] = {0.0,0.0,0.0};
 
 
 #include <ros.h>
-#include <std_msgs/Float64.h>
+#include <std_msgs/Float32.h>
+#include <std_msgs/UInt16.h>
+#include <std_msgs/Float32MultiArray.h>
 
 ros::NodeHandle  nh;
 
-std_msgs::Float64 ros_roll;
-std_msgs::Float64 ros_pitch;
-std_msgs::Float64 ros_yaw;
-std_msgs::Float64 ros_temp;
+std_msgs::Float32 ros_roll;
+std_msgs::Float32 ros_pitch;
+std_msgs::Float32 ros_yaw;
+std_msgs::UInt16 ros_temp;
+std_msgs::Float32MultiArray ros_acc;
+std_msgs::Float32MultiArray ros_gyr;
+std_msgs::Float32MultiArray ros_mgn;
+
 
 ros::Publisher imu_roll("imu_roll", &ros_roll);
 ros::Publisher imu_pitch("imu_pitch", &ros_pitch);
 ros::Publisher imu_yaw("imu_yaw", &ros_yaw);
 ros::Publisher imu_temp("imu_temp", &ros_temp);
+ros::Publisher imu_acc("imu_acc", &ros_acc);
+ros::Publisher imu_gyr("imu_gyr", &ros_gyr);
+ros::Publisher imu_mgn("imu_mgn", &ros_mgn);
+
+
+
+
+
+
+
+
+
 
 void setup()
 {
@@ -274,6 +287,10 @@ nh.advertise(imu_roll);
 nh.advertise(imu_pitch);
 nh.advertise(imu_yaw);
 nh.advertise(imu_temp);
+nh.advertise(imu_acc);
+nh.advertise(imu_gyr);
+nh.advertise(imu_mgn);
+
 
   Wire.begin();
   
@@ -283,7 +300,6 @@ nh.advertise(imu_temp);
   pinMode(myLed, OUTPUT);
   digitalWrite(myLed, HIGH);
      
-//    MPU9250SelfTest(SelfTest); // Start by performing self test and reporting values
   //  calibrateMPU9250(gyroBias, accelBias); // Calibrate gyro and accelerometers, load biases in bias registers
 
     initMPU9250(); 
@@ -294,27 +310,32 @@ nh.advertise(imu_temp);
     if (CalibrateMag == true){
 //    magcalMPU9250(magBias,magScale);  
     }
-     
-  
-  if(SerialDebug) {
-    OutputFrequency = 1000;
-   }
-
-  
+      
 }
 
 void loop()
 {  
 
+float acc[3] = {ax,ay,az} ;
+float gyr[3] = {gx,gy,gz} ;
+float mgn[3] = {mx,my,mz} ;
+
+
 ros_roll.data = roll;
 ros_pitch.data = pitch;
 ros_yaw.data = yaw;
 ros_temp.data = temperature;
+ros_acc.data = acc;
+ros_gyr.data = gyr;
+ros_mgn.data = mgn;
 
 imu_roll.publish( &ros_roll );
 imu_pitch.publish( &ros_pitch );
 imu_yaw.publish( &ros_yaw );
 imu_temp.publish( &ros_temp );
+imu_acc.publish( &ros_acc );
+imu_gyr.publish( &ros_gyr );
+imu_mgn.publish( &ros_mgn );
 
 nh.spinOnce();
 

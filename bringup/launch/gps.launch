@@ -5,7 +5,7 @@
         <param name="frame_id" value="gps" />
         <param name="use_GNSS_time" value="False" />
         <param name="time_ref_source" value="gps" />
-        <param name="useRMC" value="True" />
+        <param name="useRMC" value="False" />
     </node>
 </launch>
 
