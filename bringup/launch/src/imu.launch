@@ -1,6 +1,5 @@
 <launch>
     <node pkg="rosserial_python" type="serial_node.py" name="rosserial_python_node">
-        <param name="mode" value="serial" />
         <param name="port" value="/dev/arduino" />
     </node>
 </launch>

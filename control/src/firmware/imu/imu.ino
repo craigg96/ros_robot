@@ -259,139 +259,45 @@ ros::Publisher imu_pitch("imu_pitch", &ros_pitch);
 ros::Publisher imu_yaw("imu_yaw", &ros_yaw);
 ros::Publisher imu_temp("imu_temp", &ros_temp);
 
-void setup()
-{
 
-  nh.initNode();
-  nh.advertise(imu_roll);
-  nh.advertise(imu_pitch);
-  nh.advertise(imu_yaw);
-  nh.advertise(imu_temp);
-
-  Wire.begin();
-  
-  // Set up the interrupt pin, its set as active high, push-pull
-  pinMode(intPin, INPUT);
-  digitalWrite(intPin, LOW);
-  pinMode(myLed, OUTPUT);
-  digitalWrite(myLed, HIGH);
-     
-
-  initMPU9250(); 
-    
-  initAK8963(magCalibration); // Initialize device for active mode read of magnetometer
-  getMres();
-
-      
-}
-
-void loop()
-{  
-
-  ros_roll.data = roll;
-  ros_pitch.data = pitch;
-  ros_yaw.data = yaw;
-  ros_temp.data = temperature;
-
-  imu_roll.publish( &ros_roll );
-  imu_pitch.publish( &ros_pitch );
-  imu_yaw.publish( &ros_yaw );
-  imu_temp.publish( &ros_temp );
-
-  nh.spinOnce();
-  
-  // If intPin goes high, all data registers have new data
-  if (readByte(MPU9250_ADDRESS, INT_STATUS) & 0x01) {  // On interrupt, check if data ready interrupt
-    readAccelData(accelCount);  // Read the x/y/z adc values
-    getAres();
-    
-    // Now we'll calculate the accleration value into actual g's
-    ax = (float)accelCount[0]*aRes; // - accelBias[0];  // get actual g value, this depends on scale being set
-    ay = (float)accelCount[1]*aRes; // - accelBias[1];   
-    az = (float)accelCount[2]*aRes; // - accelBias[2];  
-   
-    readGyroData(gyroCount);  // Read the x/y/z adc values
-    getGres();
- 
-    // Calculate the gyro value into actual degrees per second
-    gx = (float)gyroCount[0]*gRes;  // get actual gyro value, this depends on scale being set
-    gy = (float)gyroCount[1]*gRes;  
-    gz = (float)gyroCount[2]*gRes;   
-  
-    readMagData(magCount);  // Read the x/y/z adc values
-    getMres();
-
-
-//    UNCOMMENT TO ASSIGN NO BIAS TO MAGNETOMETER
-
-        if (CalibrateMag == false){
-    magbias[0] = 0.;  // User environmental x-axis correction in milliGauss
-    magbias[1] = 0.;  // User environmental y-axis correction in milliGauss
-    magbias[2] = 0.;  // User environmental z-axis correction in milliGauss
-    }
-
-
-    
-    // Calculate the magnetometer values in milliGauss
-    // Include factory calibration per data sheet and user environmental corrections
-    mx = (float)magCount[0]*mRes*magCalibration[0] - magBias[0];  // get actual magnetometer value, this depends on scale being set
-    my = (float)magCount[1]*mRes*magCalibration[1] - magBias[1];  
-    mz = (float)magCount[2]*mRes*magCalibration[2] - magBias[2];   
-  }
-  
-  Now = micros();
-  deltat = ((Now - lastUpdate)/1000000.0f); // set integration time by time elapsed since last filter update
-  lastUpdate = Now;
-
-  sum += deltat; // sum for averaging filter update rate
-  sumCount++;
-  
-
-  MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f,  mx,  my, mz);
-  
-    
-    if (!AHRS) {
-    delt_t = millis() - count;
-    if(delt_t > 500) {
-
-    
-    count = millis();
-    digitalWrite(myLed, !digitalRead(myLed));  // toggle led
-    }
-    }
-    else {
-      
-    // Serial print and/or display at OutputFrequency s rate independent of data rates
-    delt_t = millis() - count;
-    if (delt_t > OutputFrequency) { 
-
- 
-    tempCount = readTempData();  // Read the adc values
-    temperature = ((float) tempCount) / 333.87 + 21.0; // Temperature in degrees Centigrade
-
-    yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);   
-    pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
-    roll  = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
-    pitch *= 180.0f / PI;
-    yaw   *= 180.0f / PI; 
-    roll  *= 180.0f / PI;
-
-
-////  Serial.print("rate = "); Serial.print((float)sumCount/sum, 2); Serial.println(" Hz");
-    count = millis(); 
-    sumCount = 0;
-    sum = 0;    
-    }
-    }
-
-
-}
 
 #pragma once
 
 //===================================================================================================================
 //====== Set of useful function to access acceleration. gyroscope, magnetometer, and temperature data
 //===================================================================================================================
+
+// Wire.h read and write protocols
+void writeByte(uint8_t address, uint8_t subAddress, uint8_t data)
+{
+    Wire.beginTransmission(address);  // Initialize the Tx buffer
+    Wire.write(subAddress);           // Put slave register address in Tx buffer
+    Wire.write(data);                 // Put data in Tx buffer
+    Wire.endTransmission();           // Send the Tx buffer
+}
+
+uint8_t readByte(uint8_t address, uint8_t subAddress)
+{
+    uint8_t data; // `data` will store the register data   
+    Wire.beginTransmission(address);         // Initialize the Tx buffer
+    Wire.write(subAddress);                  // Put slave register address in Tx buffer
+    Wire.endTransmission(false);             // Send the Tx buffer, but send a restart to keep connection alive
+    Wire.requestFrom(address, (uint8_t)1);  // Read one byte from slave register address 
+    data = Wire.read();                      // Fill Rx buffer with result
+    return data;                             // Return data read from slave register
+}
+
+void readBytes(uint8_t address, uint8_t subAddress, uint8_t count, uint8_t* dest)
+{
+    Wire.beginTransmission(address);   // Initialize the Tx buffer
+    Wire.write(subAddress);            // Put slave register address in Tx buffer
+    Wire.endTransmission(false);       // Send the Tx buffer, but send a restart to keep connection alive
+    uint8_t i = 0;
+    Wire.requestFrom(address, count);  // Read bytes from slave register address 
+    while (Wire.available()) {
+        dest[i++] = Wire.read();
+    }         // Put read results in the Rx buffer
+}
 
 void getMres()
 {
@@ -571,42 +477,6 @@ void initMPU9250()
     delay(100);
 }
 
-
-
-// Wire.h read and write protocols
-void writeByte(uint8_t address, uint8_t subAddress, uint8_t data)
-{
-    Wire.beginTransmission(address);  // Initialize the Tx buffer
-    Wire.write(subAddress);           // Put slave register address in Tx buffer
-    Wire.write(data);                 // Put data in Tx buffer
-    Wire.endTransmission();           // Send the Tx buffer
-}
-
-uint8_t readByte(uint8_t address, uint8_t subAddress)
-{
-    uint8_t data; // `data` will store the register data   
-    Wire.beginTransmission(address);         // Initialize the Tx buffer
-    Wire.write(subAddress);                  // Put slave register address in Tx buffer
-    Wire.endTransmission(false);             // Send the Tx buffer, but send a restart to keep connection alive
-    Wire.requestFrom(address, (uint8_t)1);  // Read one byte from slave register address 
-    data = Wire.read();                      // Fill Rx buffer with result
-    return data;                             // Return data read from slave register
-}
-
-void readBytes(uint8_t address, uint8_t subAddress, uint8_t count, uint8_t* dest)
-{
-    Wire.beginTransmission(address);   // Initialize the Tx buffer
-    Wire.write(subAddress);            // Put slave register address in Tx buffer
-    Wire.endTransmission(false);       // Send the Tx buffer, but send a restart to keep connection alive
-    uint8_t i = 0;
-    Wire.requestFrom(address, count);  // Read bytes from slave register address 
-    while (Wire.available()) {
-        dest[i++] = Wire.read();
-    }         // Put read results in the Rx buffer
-}
-
-
-
 void MadgwickQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz)
 {
     float q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3];   // short name local variable for readability
@@ -696,5 +566,134 @@ void MadgwickQuaternionUpdate(float ax, float ay, float az, float gx, float gy, 
     q[1] = q2 * norm;
     q[2] = q3 * norm;
     q[3] = q4 * norm;
+
+}
+
+
+void setup()
+{
+
+  nh.initNode();
+  nh.advertise(imu_roll);
+  nh.advertise(imu_pitch);
+  nh.advertise(imu_yaw);
+  nh.advertise(imu_temp);
+
+  Wire.begin();
+  
+  // Set up the interrupt pin, its set as active high, push-pull
+  pinMode(intPin, INPUT);
+  digitalWrite(intPin, LOW);
+  pinMode(myLed, OUTPUT);
+  digitalWrite(myLed, HIGH);
+     
+
+  initMPU9250(); 
+    
+  initAK8963(magCalibration); // Initialize device for active mode read of magnetometer
+  getMres();
+
+      
+}
+
+void loop()
+{  
+
+  ros_roll.data = roll;
+  ros_pitch.data = pitch;
+  ros_yaw.data = yaw;
+  ros_temp.data = temperature;
+
+  imu_roll.publish( &ros_roll );
+  imu_pitch.publish( &ros_pitch );
+  imu_yaw.publish( &ros_yaw );
+  imu_temp.publish( &ros_temp );
+
+  nh.spinOnce();
+  
+  // If intPin goes high, all data registers have new data
+  if (readByte(MPU9250_ADDRESS, INT_STATUS) & 0x01) {  // On interrupt, check if data ready interrupt
+    readAccelData(accelCount);  // Read the x/y/z adc values
+    getAres();
+    
+    // Now we'll calculate the accleration value into actual g's
+    ax = (float)accelCount[0]*aRes; // - accelBias[0];  // get actual g value, this depends on scale being set
+    ay = (float)accelCount[1]*aRes; // - accelBias[1];   
+    az = (float)accelCount[2]*aRes; // - accelBias[2];  
+   
+    readGyroData(gyroCount);  // Read the x/y/z adc values
+    getGres();
+ 
+    // Calculate the gyro value into actual degrees per second
+    gx = (float)gyroCount[0]*gRes;  // get actual gyro value, this depends on scale being set
+    gy = (float)gyroCount[1]*gRes;  
+    gz = (float)gyroCount[2]*gRes;   
+  
+    readMagData(magCount);  // Read the x/y/z adc values
+    getMres();
+
+
+//    UNCOMMENT TO ASSIGN NO BIAS TO MAGNETOMETER
+
+        if (CalibrateMag == false){
+    magbias[0] = 0.;  // User environmental x-axis correction in milliGauss
+    magbias[1] = 0.;  // User environmental y-axis correction in milliGauss
+    magbias[2] = 0.;  // User environmental z-axis correction in milliGauss
+    }
+
+
+    
+    // Calculate the magnetometer values in milliGauss
+    // Include factory calibration per data sheet and user environmental corrections
+    mx = (float)magCount[0]*mRes*magCalibration[0] - magBias[0];  // get actual magnetometer value, this depends on scale being set
+    my = (float)magCount[1]*mRes*magCalibration[1] - magBias[1];  
+    mz = (float)magCount[2]*mRes*magCalibration[2] - magBias[2];   
+  }
+  
+  Now = micros();
+  deltat = ((Now - lastUpdate)/1000000.0f); // set integration time by time elapsed since last filter update
+  lastUpdate = Now;
+
+  sum += deltat; // sum for averaging filter update rate
+  sumCount++;
+  
+
+  MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f,  mx,  my, mz);
+  
+    
+    if (!AHRS) {
+    delt_t = millis() - count;
+    if(delt_t > 500) {
+
+    
+    count = millis();
+    digitalWrite(myLed, !digitalRead(myLed));  // toggle led
+    }
+    }
+    else {
+      
+    // Serial print and/or display at OutputFrequency s rate independent of data rates
+    delt_t = millis() - count;
+    if (delt_t > OutputFrequency) { 
+
+ 
+    tempCount = readTempData();  // Read the adc values
+    temperature = ((float) tempCount) / 333.87 + 21.0; // Temperature in degrees Centigrade
+
+    yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);   
+    pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
+    roll  = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
+    pitch *= 180.0f / PI;
+    yaw   *= 180.0f / PI; 
+    roll  *= 180.0f / PI;
+
+
+////  Serial.print("rate = "); Serial.print((float)sumCount/sum, 2); Serial.println(" Hz");
+    count = millis(); 
+    sumCount = 0;
+    sum = 0;    
+    }
+    }
+
 
 }
