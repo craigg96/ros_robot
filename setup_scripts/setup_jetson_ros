@@ -21,7 +21,7 @@ sudo apt install cmake python-catkin-pkg python-empy python-nose python-setuptoo
 echo "Installing Manual Dependancies"
 
 cd ~/ros/robot/src
-#git clone https://github.com/ros-drivers/nmea_navsat_driver.git
+git clone https://github.com/ros-drivers/nmea_navsat_driver.git
 
 
 sudo apt install ros-melodic-robot-upstart -y ros-melodic-serial -y 
