@@ -1,0 +1,12 @@
+echo "Installing ros deep learning nodes"
+cd ~/ros/robot/src
+
+sudo apt-get install ros-melodic-image-transport
+sudo apt-get install ros-melodic-image-publisher
+sudo apt-get install ros-melodic-vision-msgs 
+sudo apt-get install ros-melodic-image-view
+
+
+git clone https://github.com/dusty-nv/ros_deep_learning
+cd ../ 
+catkin_make

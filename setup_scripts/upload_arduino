@@ -1,7 +1,0 @@
-#go to sketch directory
-cd /home/craig/ros/robot/src/robot/control/src/firmware
-
-#make (compile and upload) arduino sketch
-
-make
-make upload
